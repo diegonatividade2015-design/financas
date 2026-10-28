@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Finanças</title>
+  <meta name="theme-color" content="#2F6F4F">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Finanças">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="icons/icon-192.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Bloqueio por PIN -->
+  <div id="lock" class="lock" hidden>
+    <div class="lock-box">
+      <h1 id="lock-title">Digite seu PIN</h1>
+      <p id="lock-msg" class="muted"></p>
+      <div class="dots" id="dots"><i></i><i></i><i></i><i></i></div>
+      <div class="pad" id="pad">
+        <button>1</button><button>2</button><button>3</button>
+        <button>4</button><button>5</button><button>6</button>
+        <button>7</button><button>8</button><button>9</button>
+        <span></span><button>0</button><button data-k="del" aria-label="Apagar">⌫</button>
+      </div>
+    </div>
+  </div>
+
+  <main id="app" hidden>
+
+    <header class="topbar">
+      <div class="month-nav">
+        <button id="prev" aria-label="Mês anterior">‹</button>
+        <strong id="month-label"></strong>
+        <button id="next" aria-label="Próximo mês">›</button>
+      </div>
+      <button id="export" class="link">Salvar tudo</button>
+    </header>
+
+    <!-- Novo lançamento -->
+    <section class="card">
+      <h2 id="form-title">Novo lançamento</h2>
+      <form id="form" autocomplete="off">
+        <div class="seg" role="radiogroup" aria-label="Tipo">
+          <label><input type="radio" name="tipo" value="saida" checked><span>Saída</span></label>
+          <label><input type="radio" name="tipo" value="entrada"><span>Entrada</span></label>
+        </div>
+
+        <label class="field">Valor (R$)
+          <input id="valor" inputmode="decimal" placeholder="R$ 0,00" required>
+        </label>
+
+        <div class="field" id="cat-field">
+          <label for="categoria">Categoria</label>
+          <div class="row">
+            <select id="categoria"></select>
+            <button type="button" id="cat-add" class="icon" aria-label="Nova categoria">+</button>
+          </div>
+          <div class="row" id="cat-new" hidden>
+            <input id="cat-name" placeholder="Nome da categoria" maxlength="40">
+            <button type="button" id="cat-ok" class="icon">OK</button>
+          </div>
+        </div>
+
+        <label class="field">Descrição
+          <input id="descricao" placeholder="Ex.: mercado" maxlength="80">
+        </label>
+
+        <label class="field">Data
+          <input id="data" type="date" required>
+        </label>
+
+        <button class="primary" id="save" type="submit">Salvar</button>
+        <div class="row" id="edit-actions" hidden>
+          <button type="button" id="cancel" class="secondary">Cancelar</button>
+          <button type="button" id="delete" class="danger">Apagar</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Meta do mês -->
+    <section class="card">
+      <div class="row between">
+        <h2>Meta do mês</h2>
+        <button id="meta-edit" class="link">Definir</button>
+      </div>
+      <div id="meta-form" class="row" hidden>
+        <input id="meta-input" inputmode="decimal" placeholder="Ex.: 3000,00">
+        <button id="meta-ok" class="icon">OK</button>
+      </div>
+      <div id="meta-view">
+        <div class="bar"><div id="bar-fill"></div></div>
+        <div class="row between small">
+          <span>Gasto <b id="meta-gasto">R$ 0,00</b></span>
+          <span id="meta-rest-wrap">Restante <b id="meta-rest">—</b></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Saldo -->
+    <section class="card">
+      <h2>Saldo do mês</h2>
+      <div class="saldo" id="saldo">R$ 0,00</div>
+      <div class="row between small">
+        <span>Entradas <b class="pos" id="tot-in">R$ 0,00</b></span>
+        <span>Saídas <b class="neg" id="tot-out">R$ 0,00</b></span>
+      </div>
+    </section>
+
+    <!-- Por categoria -->
+    <section>
+      <h2 class="section-title">Por categoria</h2>
+      <div id="cats" class="grid"></div>
+    </section>
+
+    <!-- Lista -->
+    <section>
+      <h2 class="section-title">Lançamentos</h2>
+      <ul id="list" class="list"></ul>
+      <p id="empty" class="muted center" hidden>Nenhum lançamento neste mês.</p>
+    </section>
+
+  </main>
+
+  <div id="toast" class="toast" hidden></div>
+
+  <script src="lib/xlsx.full.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
