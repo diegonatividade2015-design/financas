@@ -114,7 +114,7 @@ function render() {
     $('meta-rest-wrap').firstChild.textContent = rest < 0 ? 'Estourou ' : 'Restante ';
     $('meta-rest').textContent = fmt(Math.abs(rest));
     $('meta-rest').style.color = rest < 0 ? 'var(--bad)' : '';
-    $('meta-edit').textContent = `Meta ${fmt(meta.valor)} · Editar`;
+    $('meta-edit').textContent = `Limite ${fmt(meta.valor)} · Editar`;
   } else {
     fill.style.width = '0';
     $('meta-rest-wrap').firstChild.textContent = 'Restante ';
@@ -256,7 +256,7 @@ async function salvarMeta() {
     await del('metas', mesAtual);
   } else {
     const c = parseValor(v);
-    if (!c) { toast('Valor de meta inválido'); return; }
+    if (!c) { toast('Valor de limite inválido'); return; }
     await put('metas', { mes: mesAtual, valor: c });
   }
   await carregar();
@@ -417,7 +417,14 @@ async function init() {
   $('cat-add').addEventListener('click', () => { $('cat-new').hidden = !$('cat-new').hidden; $('cat-name').focus(); });
   $('cat-ok').addEventListener('click', novaCategoria);
   $('cat-name').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); novaCategoria(); } });
-  $('export').addEventListener('click', exportar);
+  const fecharMenu = () => { $('menu').hidden = true; $('more').setAttribute('aria-expanded', 'false'); };
+  $('more').addEventListener('click', (e) => {
+    e.stopPropagation();
+    $('menu').hidden = !$('menu').hidden;
+    $('more').setAttribute('aria-expanded', String(!$('menu').hidden));
+  });
+  document.addEventListener('click', fecharMenu);
+  $('export').addEventListener('click', () => { fecharMenu(); exportar(); });
 
   $('meta-edit').addEventListener('click', () => {
     const f = $('meta-form');
@@ -441,6 +448,15 @@ async function init() {
   };
   $('prev').addEventListener('click', () => trocarMes(-1));
   $('next').addEventListener('click', () => trocarMes(1));
+
+  // iOS ignora user-scalable=no: bloqueia o zoom por pinça e por toque duplo
+  ['gesturestart', 'gesturechange', 'gestureend'].forEach((g) => document.addEventListener(g, (e) => e.preventDefault()));
+  let ultimoToque = 0;
+  document.addEventListener('touchend', (e) => {
+    const agora = Date.now();
+    if (agora - ultimoToque < 300 && !/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName)) e.preventDefault();
+    ultimoToque = agora;
+  }, { passive: false });
 
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 }

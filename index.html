@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>Finanças</title>
   <meta name="theme-color" content="#2F6F4F">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -39,7 +39,12 @@
         <strong id="month-label"></strong>
         <button id="next" aria-label="Próximo mês">›</button>
       </div>
-      <button id="export" class="link">Salvar tudo</button>
+      <div class="more">
+        <button id="more" class="dots-btn" aria-label="Mais opções" aria-expanded="false">⋯</button>
+        <div id="menu" class="menu" hidden>
+          <button id="export">Salvar tudo (.xlsx)</button>
+        </div>
+      </div>
     </header>
 
     <!-- Novo lançamento -->
@@ -86,7 +91,7 @@
     <!-- Meta do mês -->
     <section class="card">
       <div class="row between">
-        <h2>Meta do mês</h2>
+        <h2>Limite do mês</h2>
         <button id="meta-edit" class="link">Definir</button>
       </div>
       <div id="meta-form" class="row" hidden>
