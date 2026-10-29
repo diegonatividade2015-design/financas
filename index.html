@@ -89,7 +89,7 @@
     </section>
 
     <!-- Meta do mês -->
-    <section class="card">
+    <section class="card" id="sec-limite">
       <div class="row between">
         <h2>Limite do mês</h2>
         <button id="meta-edit" class="link">Definir</button>
@@ -108,7 +108,7 @@
     </section>
 
     <!-- Saldo -->
-    <section class="card">
+    <section class="card" id="sec-saldo">
       <h2>Saldo do mês</h2>
       <div class="saldo" id="saldo">R$ 0,00</div>
       <div class="row between small">
@@ -118,7 +118,7 @@
     </section>
 
     <!-- Gasto por período -->
-    <section class="card">
+    <section class="card" id="sec-periodo">
       <h2>Gasto por período</h2>
       <div class="row">
         <label class="field grow">De
@@ -143,15 +143,26 @@
       <div id="p-cats" class="pcats"></div>
     </section>
 
-    <!-- Por categoria -->
-    <section>
+    <!-- Entradas do mês (aparece quando o tipo é Entrada) -->
+    <section id="sec-entradas" hidden>
+      <h2 class="section-title">Entradas do mês</h2>
+      <div class="hero">
+        <span>Total de entradas</span>
+        <b id="e-total">R$ 0,00</b>
+        <small id="e-count"></small>
+      </div>
+      <div id="e-cats" class="grid"></div>
+    </section>
+
+    <!-- Por categoria (aparece quando o tipo é Saída) -->
+    <section id="sec-saidas">
       <h2 class="section-title">Por categoria</h2>
       <div id="cats" class="grid"></div>
     </section>
 
     <!-- Lista -->
     <section>
-      <h2 class="section-title">Lançamentos</h2>
+      <h2 class="section-title" id="list-title">Lançamentos</h2>
       <ul id="list" class="list"></ul>
       <p id="empty" class="muted center" hidden>Nenhum lançamento neste mês.</p>
     </section>

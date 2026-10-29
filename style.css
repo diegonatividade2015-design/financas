@@ -117,6 +117,16 @@ button { font: inherit; cursor: pointer; }
 .cat b { font-size: 17px; }
 .cat.zero b { color: var(--muted); font-weight: 500; }
 
+/* entradas em destaque */
+.hero { background: var(--ok); color: #fff; border-radius: var(--radius); padding: 16px; margin-bottom: 10px; }
+.hero span { display: block; font-size: 13px; opacity: .9; }
+.hero b { display: block; font-size: 30px; line-height: 1.2; }
+.hero small { font-size: 13px; opacity: .9; }
+.cat.in { border-left: 4px solid var(--ok); }
+.cat.in b { color: var(--ok); }
+.cat.in.zero b { color: var(--muted); }
+.cat small { display: block; font-size: 12px; color: var(--muted); }
+
 /* lista */
 .list { list-style: none; margin: 0; padding: 0; background: var(--card); border-radius: var(--radius); overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,.04); }
 .list:empty { display: none; }

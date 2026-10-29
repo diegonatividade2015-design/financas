@@ -6,6 +6,8 @@ const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' 
 const fmt = (cents) => brl.format(cents / 100);
 const CATEGORIAS_INICIAIS = ['Compras pessoais', 'Saúde', 'Alimentação', 'Compras pela internet', 'Despesas fixas', 'Despesas com veículos'];
 
+const CATEGORIAS_ENTRADA = ['Salário', 'Renda extra', 'Investimentos', 'Outras entradas'];
+
 const pad2 = (n) => String(n).padStart(2, '0');
 const hoje = () => { const d = new Date(); return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`; };
 const mesDe = (iso) => iso.slice(0, 7);
@@ -126,7 +128,7 @@ function render() {
   // categorias
   const porCat = {};
   doMes.filter((l) => l.tipo === 'saida').forEach((l) => (porCat[l.categoria] = (porCat[l.categoria] || 0) + l.valor));
-  $('cats').replaceChildren(...categorias.map((c) => {
+  $('cats').replaceChildren(...categorias.filter((c) => tipoCat(c) === 'saida').map((c) => {
     const v = porCat[c.nome] || 0;
     const el = document.createElement('div');
     el.className = 'cat' + (v ? '' : ' zero');
@@ -137,15 +139,19 @@ function render() {
   }));
 
   // lista
-  $('empty').hidden = doMes.length > 0;
-  $('list').replaceChildren(...doMes.map((l) => {
+  const soEntradas = tipoSel() === 'entrada';
+  const visiveis = soEntradas ? doMes.filter((l) => l.tipo === 'entrada') : doMes;
+  $('list-title').textContent = soEntradas ? 'Entradas' : 'Lançamentos';
+  $('empty').textContent = soEntradas ? 'Nenhuma entrada neste mês.' : 'Nenhum lançamento neste mês.';
+  $('empty').hidden = visiveis.length > 0;
+  $('list').replaceChildren(...visiveis.map((l) => {
     const li = document.createElement('li');
     li.addEventListener('click', () => editar(l.id));
     const d = document.createElement('div'); d.className = 'd';
     const t = document.createElement('div'); t.className = 't';
     t.textContent = l.descricao || (l.tipo === 'entrada' ? 'Entrada' : l.categoria);
     const s = document.createElement('div'); s.className = 's';
-    s.textContent = brData(l.data) + (l.tipo === 'saida' ? ' · ' + l.categoria : ' · Entrada');
+    s.textContent = brData(l.data) + ' · ' + (l.categoria || (l.tipo === 'entrada' ? 'Entrada' : 'Sem categoria'));
     d.append(t, s);
     const v = document.createElement('div');
     v.className = 'v ' + (l.tipo === 'entrada' ? 'pos' : 'neg');
@@ -154,8 +160,35 @@ function render() {
     return li;
   }));
 
+  renderEntradas(doMes, entradas);
   renderCategoriaSelect();
   renderPeriodo();
+}
+
+const tipoCat = (c) => c.tipo || 'saida'; // categorias antigas não têm o campo
+
+function renderEntradas(doMes, total) {
+  const ins = doMes.filter((l) => l.tipo === 'entrada');
+  $('e-total').textContent = fmt(total);
+  $('e-count').textContent = `${ins.length} ${ins.length === 1 ? 'entrada' : 'entradas'} neste mês`;
+  const por = {};
+  ins.forEach((l) => {
+    const k = l.categoria || 'Sem categoria';
+    por[k] = por[k] || { v: 0, n: 0 };
+    por[k].v += l.valor; por[k].n++;
+  });
+  const nomes = categorias.filter((c) => tipoCat(c) === 'entrada').map((c) => c.nome);
+  Object.keys(por).forEach((k) => { if (!nomes.includes(k)) nomes.push(k); });
+  $('e-cats').replaceChildren(...nomes.map((nome) => {
+    const d = por[nome] || { v: 0, n: 0 };
+    const el = document.createElement('div');
+    el.className = 'cat in' + (d.v ? '' : ' zero');
+    const s = document.createElement('span'); s.textContent = nome;
+    const b = document.createElement('b'); b.textContent = fmt(d.v);
+    const q = document.createElement('small'); q.textContent = d.n ? `${d.n} ${d.n === 1 ? 'entrada' : 'entradas'}` : 'nenhuma';
+    el.append(s, b, q);
+    return el;
+  }));
 }
 
 /* ---------- gasto por período ---------- */
@@ -210,8 +243,9 @@ function periodoRapido(p) {
 function renderCategoriaSelect() {
   const sel = $('categoria');
   const atual = sel.value;
-  sel.replaceChildren(...categorias.map((c) => new Option(c.nome, c.nome)));
-  if (categorias.some((c) => c.nome === atual)) sel.value = atual;
+  const lista = categorias.filter((c) => tipoCat(c) === tipoSel());
+  sel.replaceChildren(...lista.map((c) => new Option(c.nome, c.nome)));
+  if (lista.some((c) => c.nome === atual)) sel.value = atual;
 }
 
 /* ---------- formulário ---------- */
@@ -222,9 +256,10 @@ function dataPadrao() {
   return mesAtual === mesDe(hoje()) ? hoje() : mesAtual + '-01';
 }
 
-function limparForm() {
+function limparForm(manterTipo) {
   editandoId = null;
   $('form').reset();
+  if (manterTipo) document.querySelector(`input[name="tipo"][value="${manterTipo}"]`).checked = true;
   $('data').value = dataPadrao();
   $('form-title').textContent = 'Novo lançamento';
   $('save').textContent = 'Salvar';
@@ -233,7 +268,11 @@ function limparForm() {
 }
 
 function atualizarTipo() {
-  $('cat-field').hidden = tipoSel() === 'entrada';
+  const entrada = tipoSel() === 'entrada';
+  // aba Entrada: só cards e informações de entradas
+  $('sec-entradas').hidden = !entrada;
+  ['sec-saidas', 'sec-limite', 'sec-saldo', 'sec-periodo'].forEach((id) => ($(id).hidden = entrada));
+  render();
 }
 
 function editar(id) {
@@ -241,14 +280,14 @@ function editar(id) {
   if (!l) return;
   editandoId = id;
   document.querySelector(`input[name="tipo"][value="${l.tipo}"]`).checked = true;
+  atualizarTipo();
   $('valor').value = (l.valor / 100).toFixed(2).replace('.', ',');
-  if (l.tipo === 'saida') $('categoria').value = l.categoria;
+  if (l.categoria) $('categoria').value = l.categoria;
   $('descricao').value = l.descricao;
   $('data').value = l.data;
   $('form-title').textContent = 'Editar lançamento';
   $('save').textContent = 'Salvar alteração';
   $('edit-actions').hidden = false;
-  atualizarTipo();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -261,7 +300,7 @@ async function salvar(e) {
   const reg = {
     tipo,
     valor,
-    categoria: tipo === 'saida' ? $('categoria').value : '',
+    categoria: $('categoria').value,
     descricao: $('descricao').value.trim(),
     data: $('data').value,
   };
@@ -270,7 +309,7 @@ async function salvar(e) {
   const eraEdicao = !!editandoId;
   mesAtual = mesDe(reg.data); // mostra o mês do lançamento salvo
   await carregar();
-  limparForm();
+  limparForm(tipo); // continua na mesma aba (Saída/Entrada)
   render();
   toast(eraEdicao ? 'Alteração salva' : 'Lançamento salvo');
 }
@@ -278,8 +317,9 @@ async function salvar(e) {
 async function apagar() {
   if (!editandoId || !confirm('Apagar este lançamento?')) return;
   await del('lancamentos', editandoId);
+  const tipo = tipoSel();
   await carregar();
-  limparForm();
+  limparForm(tipo);
   render();
   toast('Lançamento apagado');
 }
@@ -287,10 +327,12 @@ async function apagar() {
 async function novaCategoria() {
   const nome = $('cat-name').value.trim();
   if (!nome) return;
-  if (categorias.some((c) => c.nome.toLowerCase() === nome.toLowerCase())) {
-    $('categoria').value = categorias.find((c) => c.nome.toLowerCase() === nome.toLowerCase()).nome;
+  const igual = categorias.find((c) => c.nome.toLowerCase() === nome.toLowerCase());
+  if (igual) {
+    if (tipoCat(igual) === tipoSel()) $('categoria').value = igual.nome;
+    else { toast('Já existe uma categoria com esse nome'); return; }
   } else {
-    await put('categorias', { nome, ordem: Date.now() });
+    await put('categorias', { nome, tipo: tipoSel(), ordem: Date.now() });
     await carregar();
     renderCategoriaSelect();
     $('categoria').value = nome;
@@ -322,7 +364,7 @@ async function exportar() {
     .map((l) => ({
       'Data': brData(l.data),
       'Tipo': l.tipo === 'entrada' ? 'Entrada' : 'Saída',
-      'Categoria': l.tipo === 'entrada' ? '—' : l.categoria,
+      'Categoria': l.categoria || '—',
       'Descrição': l.descricao,
       'Valor (R$)': l.valor / 100,
     }));
@@ -431,7 +473,10 @@ async function init() {
   db = await abrirDB();
 
   if (!(await getAll('categorias')).length) {
-    for (let i = 0; i < CATEGORIAS_INICIAIS.length; i++) await put('categorias', { nome: CATEGORIAS_INICIAIS[i], ordem: i });
+    for (let i = 0; i < CATEGORIAS_INICIAIS.length; i++) await put('categorias', { nome: CATEGORIAS_INICIAIS[i], tipo: 'saida', ordem: i });
+  }
+  if (!(await getAll('categorias')).some((c) => c.tipo === 'entrada')) {
+    for (let i = 0; i < CATEGORIAS_ENTRADA.length; i++) await put('categorias', { nome: CATEGORIAS_ENTRADA[i], tipo: 'entrada', ordem: 1000 + i });
   }
   await carregar();
   limparForm();
