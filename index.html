@@ -117,6 +117,32 @@
       </div>
     </section>
 
+    <!-- Gasto por período -->
+    <section class="card">
+      <h2>Gasto por período</h2>
+      <div class="row">
+        <label class="field grow">De
+          <input id="p-de" type="date">
+        </label>
+        <label class="field grow">Até
+          <input id="p-ate" type="date">
+        </label>
+      </div>
+      <div class="chips">
+        <button type="button" class="chip" data-p="7">7 dias</button>
+        <button type="button" class="chip" data-p="30">30 dias</button>
+        <button type="button" class="chip" data-p="mes">Este mês</button>
+        <button type="button" class="chip" data-p="ano">Este ano</button>
+      </div>
+      <div class="muted small" id="p-info"></div>
+      <div class="saldo neg" id="p-total">R$ 0,00</div>
+      <div class="row between small">
+        <span>Entradas <b class="pos" id="p-in">R$ 0,00</b></span>
+        <span id="p-count"></span>
+      </div>
+      <div id="p-cats" class="pcats"></div>
+    </section>
+
     <!-- Por categoria -->
     <section>
       <h2 class="section-title">Por categoria</h2>

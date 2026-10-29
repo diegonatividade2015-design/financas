@@ -155,6 +155,56 @@ function render() {
   }));
 
   renderCategoriaSelect();
+  renderPeriodo();
+}
+
+/* ---------- gasto por período ---------- */
+function addDias(iso, n) {
+  const [a, m, d] = iso.split('-').map(Number);
+  const x = new Date(a, m - 1, d + n);
+  return `${x.getFullYear()}-${pad2(x.getMonth() + 1)}-${pad2(x.getDate())}`;
+}
+
+function renderPeriodo() {
+  const de = $('p-de').value, ate = $('p-ate').value;
+  const total = $('p-total'), cats = $('p-cats');
+  cats.replaceChildren();
+  if (!de || !ate) { $('p-info').textContent = 'Escolha as duas datas.'; total.textContent = fmt(0); $('p-in').textContent = fmt(0); $('p-count').textContent = ''; return; }
+  if (de > ate) { $('p-info').textContent = 'A data inicial é depois da final.'; total.textContent = fmt(0); $('p-in').textContent = fmt(0); $('p-count').textContent = ''; return; }
+
+  const doPeriodo = lancamentos.filter((l) => l.data >= de && l.data <= ate);
+  const saidas = doPeriodo.filter((l) => l.tipo === 'saida');
+  const soma = saidas.reduce((s, l) => s + l.valor, 0);
+  const entradas = doPeriodo.filter((l) => l.tipo === 'entrada').reduce((s, l) => s + l.valor, 0);
+
+  $('p-info').textContent = `${brData(de)} a ${brData(ate)} · total de saídas`;
+  total.textContent = fmt(soma);
+  $('p-in').textContent = fmt(entradas);
+  $('p-count').textContent = `${saidas.length} ${saidas.length === 1 ? 'saída' : 'saídas'}`;
+
+  const porCat = {};
+  saidas.forEach((l) => (porCat[l.categoria] = (porCat[l.categoria] || 0) + l.valor));
+  Object.entries(porCat).sort((a, b) => b[1] - a[1]).forEach(([nome, v]) => {
+    const el = document.createElement('div'); el.className = 'pcat';
+    const top = document.createElement('div'); top.className = 'top';
+    const n = document.createElement('span'); n.textContent = nome;
+    const val = document.createElement('span'); val.textContent = `${fmt(v)} · ${Math.round((v / soma) * 100)}%`;
+    top.append(n, val);
+    const mini = document.createElement('div'); mini.className = 'mini';
+    const bar = document.createElement('i'); bar.style.width = (v / soma) * 100 + '%';
+    mini.append(bar);
+    el.append(top, mini);
+    cats.append(el);
+  });
+}
+
+function periodoRapido(p) {
+  const h = hoje();
+  if (p === 'mes') $('p-de').value = h.slice(0, 8) + '01';
+  else if (p === 'ano') $('p-de').value = h.slice(0, 4) + '-01-01';
+  else $('p-de').value = addDias(h, -(Number(p) - 1));
+  $('p-ate').value = h;
+  renderPeriodo();
 }
 
 function renderCategoriaSelect() {
@@ -385,7 +435,10 @@ async function init() {
   }
   await carregar();
   limparForm();
+  periodoRapido('mes');
   render();
+  ['p-de', 'p-ate'].forEach((id) => $(id).addEventListener('change', renderPeriodo));
+  document.querySelectorAll('.chip').forEach((c) => c.addEventListener('click', () => periodoRapido(c.dataset.p)));
 
   // PIN
   pinCfg = (await getOne('config', 'pin')) || null;
