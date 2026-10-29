@@ -24,6 +24,38 @@ function parseValor(txt) {
   return c > 0 ? c : null;
 }
 
+// Máscara de reais: digitou 1800 -> 1.800 (e ao sair do campo, 1.800,00). Vírgula para os centavos.
+function mascaraValor(el, final, typedDot) {
+  const antes = el.value;
+  const pos = el.selectionStart == null ? antes.length : el.selectionStart;
+  const sig = antes.slice(0, pos).replace(/[^\d,]/g, '').length; // dígitos/vírgula antes do cursor
+
+  let v = typedDot ? antes.replace(/\.(?=[^.]*$)/, ',') : antes; // ponto digitado vira vírgula
+  v = v.replace(/[^\d,]/g, '');
+  const i = v.indexOf(',');
+  let inteiro = (i < 0 ? v : v.slice(0, i)).replace(/^0+(?=\d)/, '');
+  let dec = i < 0 ? null : v.slice(i + 1).replace(/,/g, '').slice(0, 2);
+
+  if (final) {
+    if (!inteiro && !dec) { el.value = ''; return; }
+    inteiro = inteiro || '0';
+    dec = (dec || '').padEnd(2, '0');
+  }
+  inteiro = inteiro.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  const novo = dec === null ? inteiro : inteiro + ',' + dec;
+  el.value = novo;
+
+  if (!final && document.activeElement === el) { // devolve o cursor ao mesmo ponto lógico
+    let n = 0, p = 0;
+    while (p < novo.length && n < sig) { if (/[\d,]/.test(novo[p])) n++; p++; }
+    el.setSelectionRange(p, p);
+  }
+}
+function ligarMascara(el) {
+  el.addEventListener('input', (e) => mascaraValor(el, false, e.data === '.'));
+  el.addEventListener('blur', () => mascaraValor(el, true));
+}
+
 let toastTimer;
 function toast(msg) {
   const t = $('toast');
@@ -282,6 +314,7 @@ function editar(id) {
   document.querySelector(`input[name="tipo"][value="${l.tipo}"]`).checked = true;
   atualizarTipo();
   $('valor').value = (l.valor / 100).toFixed(2).replace('.', ',');
+  mascaraValor($('valor'), true);
   if (l.categoria) $('categoria').value = l.categoria;
   $('descricao').value = l.descricao;
   $('data').value = l.data;
@@ -508,6 +541,8 @@ async function init() {
   });
 
   // eventos da tela
+  ligarMascara($('valor'));
+  ligarMascara($('meta-input'));
   $('form').addEventListener('submit', salvar);
   document.querySelectorAll('input[name="tipo"]').forEach((r) => r.addEventListener('change', atualizarTipo));
   $('cancel').addEventListener('click', limparForm);
@@ -530,6 +565,7 @@ async function init() {
     if (!f.hidden) {
       const m = metaDoMes(mesAtual);
       $('meta-input').value = m ? (m.valor / 100).toFixed(2).replace('.', ',') : '';
+      mascaraValor($('meta-input'), true);
       $('meta-input').focus();
     }
   });
